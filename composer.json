@@ -1,0 +1,18 @@
+{
+    "name": "ailixter/gears-watchedcall",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "ailixter",
+            "email": "ailixter@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Ailixter\\Gears\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^7.1"
+    }
+}
