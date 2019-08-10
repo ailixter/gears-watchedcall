@@ -68,7 +68,7 @@ class MainTest extends TestCase
         $this->assertContains('OK', $data->args);
     }
 
-    public function testWatchedRedirect()
+    public function testMethodSubstitution()
     {
         $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable &$callable, array &$args) {
             $callable = 'strtolower';
@@ -78,7 +78,7 @@ class MainTest extends TestCase
         $this->assertEquals('gotcha', $result);
     }
 
-    public function testDisallowed()
+    public function testDisallowance()
     {
         $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable) {
             [, $method] = $callable;
@@ -114,10 +114,18 @@ class MainTest extends TestCase
     public function testWatchedResultChange()
     {
         $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function (callable $callable, array $args, &$result) {
-            $result .= ' ' . $callable[1];
+            [, $method] = $callable;
+            $result .= ' ' . $method;
         });
         $result = $this->test->watchedMethod('OK');
         $this->assertEquals('OK? watchedMethod', $result);
+    }
+
+    public function testWatchedResultType()
+    {
+        $this->expectException(TypeError::class);
+        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function (callable $callable, array $args, int $result) {});
+        $this->test->watchedMethod('OK');
     }
 
     public function testInterception()

@@ -22,25 +22,26 @@ trait CallWatching
      */
     private $watchingSubjects = [];
 
-    public function getWatchingSubject(string $eventName, string $methodName): ?SubjectInterface
+    protected function getWatchingSubject(string $eventName, string $methodName): ?SubjectInterface
     {
         return $this->watchingSubjects[$eventName][$methodName] ?? null;
     }
 
-    public function setWatchingSubject(string $eventName, string $methodName): SubjectInterface
+    protected function setWatchingSubject(string $eventName, string $methodName): SubjectInterface
     {
         return $this->watchingSubjects[$eventName][$methodName] = new Subject();
     }
 
-    public function attachToWatch(string $eventName, string $methodName, callable $observer)
+    public function attachToWatch(string $eventName, string $methodName, callable $observer): self
     {
         if (!$subject = $this->getWatchingSubject($eventName, $methodName)) {
             $subject = $this->setWatchingSubject($eventName, $methodName);
         }
         $subject->attach($observer);
+        return $this;
     }
 
-    public function getWatchedObject()
+    protected function getWatchedObject()
     {
         return $this;
     }
@@ -49,7 +50,7 @@ trait CallWatching
     {
         $callable = [$this->getWatchedObject(), $methodName];
         if ($before = $this->getWatchingSubject(BEFORE_CALL, $methodName)) {
-            $before($callable, $args) !== false;
+            $before($callable, $args);
         }
         $result = $callable(...$args);
         if ($after = $this->getWatchingSubject(AFTER_CALL, $methodName)) {
