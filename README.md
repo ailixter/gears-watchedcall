@@ -32,14 +32,6 @@ Hooks before/after any method call
     $result = $example->watchedMethod(2, 3); // 5
 ```
 
-### Tampering Arguments
-```php
-    $example->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable, array &$args) {
-        $args = array_map(function (int $arg) { return $arg * $arg; }, $args);
-    });
-    $result = $example->watchedMethod(2, 3); // 13
-```
-
 ### Loud Access Check
 ```php
     $example->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable) {
@@ -77,6 +69,15 @@ Hooks before/after any method call
     });
     $result = $example->watchedMethod(2, 3); // 2
 ```
+
+### Tampering Arguments
+```php
+    $example->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable, array &$args) {
+        $args = array_map(function (int $arg) { return $arg * $arg; }, $args);
+    });
+    $result = $example->watchedMethod(2, 3); // 13
+```
+
 ### Classic Decoration
 ```php
     $done = false;
