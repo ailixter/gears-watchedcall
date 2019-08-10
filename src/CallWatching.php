@@ -47,18 +47,14 @@ trait CallWatching
 
     public function __call($methodName, array $args)
     {
-        $result = null;
-        $doCall = true;
+        $callable = [$this->getWatchedObject(), $methodName];
         if ($before = $this->getWatchingSubject(BEFORE_CALL, $methodName)) {
-            $doCall = $before($this, $methodName, $args, $result) !== false;
+            $before($callable, $args) !== false;
         }
-        if ($doCall) {
-            $result = $this->getWatchedObject()->{$methodName}(...$args);
-        }
+        $result = $callable(...$args);
         if ($after = $this->getWatchingSubject(AFTER_CALL, $methodName)) {
-            $after($this, $methodName, $args, $result);
+            $after($callable, $args, $result);
         }
         return $result;
     }
 }
-

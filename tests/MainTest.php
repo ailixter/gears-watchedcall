@@ -55,7 +55,8 @@ class MainTest extends TestCase
     public function testWatched()
     {
         $data = new \stdClass;
-        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function ($object, string $method, array $args) use ($data) {
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable, array $args) use ($data) {
+            [$object, $method] = $callable;
             $data->object = $object;
             $data->method = $method;
             $data->args   = $args;
@@ -69,17 +70,18 @@ class MainTest extends TestCase
 
     public function testWatchedRedirect()
     {
-        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function ($object, string &$method, array &$args) {
-            $method = 'notWatchedMethod';
-            $args[0] = 'Gotcha';
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable &$callable, array &$args) {
+            $callable = 'strtolower';
+            $args[0] = 'GOTCHA';
         });
         $result = $this->test->watchedMethod('OK');
-        $this->assertEquals('Gotcha!', $result);
+        $this->assertEquals('gotcha', $result);
     }
 
     public function testDisallowed()
     {
-        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function ($object, string $method) {
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable $callable) {
+            [, $method] = $callable;
             throw new \RuntimeException("Disallowed " . $method);
         });
         try {
@@ -95,9 +97,8 @@ class MainTest extends TestCase
     public function testWatchedResult()
     {
         $data = new \stdClass;
-        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function ($object, string $method, array $args, $result) use ($data) {
-            $data->object = $object;
-            $data->method = $method;
+        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function (callable $callable, array $args, $result) use ($data) {
+            [$data->object, $data->method] = $callable;
             $data->args   = $args;
             $data->result = $result;
         });
@@ -112,8 +113,8 @@ class MainTest extends TestCase
 
     public function testWatchedResultChange()
     {
-        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function ($object, string $method, array $args, &$result) {
-            $result .= ' ' . $method;
+        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function (callable $callable, array $args, &$result) {
+            $result .= ' ' . $callable[1];
         });
         $result = $this->test->watchedMethod('OK');
         $this->assertEquals('OK? watchedMethod', $result);
@@ -121,19 +122,44 @@ class MainTest extends TestCase
 
     public function testInterception()
     {
-        $this->test->attachToWatch(BEFORE_CALL, 'watchedFail', function ($object, string $method, array $args, &$result) {
-            $result = "Intercepted " . $method;
-            return false;
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedFail', function (callable &$callable) {
+            [, $method] = $callable;
+            $callable = function () use ($method) { return "Intercepted " . $method; };
         });
         $this->assertEquals('Intercepted watchedFail', $this->test->watchedFail('Disaster'));
     }
 
     public function testInterception2()
     {
-        $this->test->attachToWatch(BEFORE_CALL, 'unknownMethod', function ($object, string $method, array $args, &$result) {
-            $result = "Intercepted " . $method;
-            return false;
+        $this->test->attachToWatch(BEFORE_CALL, 'unknownMethod', function (callable &$callable) {
+            [, $method] = $callable;
+            $callable = function () use ($method) { return "Intercepted " . $method; };
         });
         $this->assertEquals('Intercepted unknownMethod', $this->test->unknownMethod('OK'));
+    }
+
+    public function testDecorate()
+    {
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable &$callable, array &$args) {
+            $args[0] .= ' forged arg';
+        });
+        $this->test->attachToWatch(AFTER_CALL, 'watchedMethod', function (callable $callable, array $args, &$result) {
+            $result .= ' returns forged result';
+        });
+        $result = $this->test->watchedMethod('OK');
+        $this->assertEquals('OK forged arg? returns forged result', $result);
+    }
+
+    public function testDecorateClassically()
+    {
+        $done = false;
+        $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable &$callable) use (&$done) {
+            if ($done) return;
+            $done = true;
+            $callable = function (/*...$args*/) use ($callable) {
+                return $callable('forged arg') . ' returns forged result';
+            };
+        });
+        $this->assertEquals('forged arg? returns forged result', $this->test->watchedMethod('OK'));
     }
 }
