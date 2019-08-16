@@ -1,5 +1,6 @@
 {
     "name": "ailixter/gears-watchedcall",
+    "description": "Hooks before/after any method call",
     "license": "MIT",
     "authors": [
         {
