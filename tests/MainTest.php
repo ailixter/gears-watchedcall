@@ -146,6 +146,13 @@ class MainTest extends TestCase
         $this->assertEquals('Intercepted unknownMethod', $this->test->unknownMethod('OK'));
     }
 
+    public function testUnknownMethod()
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('nesting level');
+        $this->test->unknownMethod('produce recursion!');
+    }
+
     public function testDecorate()
     {
         $this->test->attachToWatch(BEFORE_CALL, 'watchedMethod', function (callable &$callable, array &$args) {

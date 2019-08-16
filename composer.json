@@ -13,6 +13,13 @@
         }
     },
     "require": {
+        "ailixter/gears": "master-dev",
         "php": "^7.1"
-    }
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/ailixter/gears.git"
+        }
+    ]
 }
